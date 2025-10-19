@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Magical Grimoire with Quill Trail</title>
+<title>Live YouTube Names Magical Grimoire</title>
 <style>
 body {
   margin: 0;
@@ -33,10 +33,12 @@ body {
   margin: auto;
   padding: 2%;
   color: #ff4d4d;
-  font-size: clamp(50px, 6vw, 50px);
+  font-size: clamp(40px, 5vw, 60px);
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
   overflow: hidden;
 }
 
@@ -51,7 +53,7 @@ body {
   display: inline-block;
   position: relative;
   color: pink;
-  text-shadow: 
+  text-shadow:
      0 0 2px #ff0000,
      0 0 4px #ff3333,
      0 0 6px #ff6666;
@@ -69,8 +71,10 @@ body {
 
 @keyframes float {
   0% {transform: translate(0,0) scale(1); opacity:1;}
-  50% {transform: translate(5px,-10px) scale(1.2); opacity:0.6;}
-  100% {transform: translate(-5px,-20px) scale(0.8); opacity:0;}
+  25% {transform: translate(5px,-5px) scale(1.1); opacity:0.8;}
+  50% {transform: translate(-3px,-15px) scale(1.2); opacity:0.6;}
+  75% {transform: translate(4px,-25px) scale(1); opacity:0.4;}
+  100% {transform: translate(0px,-40px) scale(0.8); opacity:0;}
 }
 
 #quill {
@@ -94,73 +98,91 @@ body {
 <script>
 const page = document.getElementById('page');
 const quill = document.getElementById('quill');
-const maxLines = 7;
-let currentLines = [];
-const names = ["Hosh Yshd","Ankit","Riya","hello","kallu","Vikram","Sara","hvghehd","jsjehf","Ali","Maya","Kiran"];
-let nameIndex = 0;
 
-// Create spark at specific coordinates
+// ======= YouTube API Configuration =======
+const API_KEY = 'AIzaSyAluUkOlp_pomwmJiBlygWanS7ak8qvoK4';
+const LIVE_CHAT_ID = 'Cg0KC21BeWp3RzAtVmtBKicKGFVDa21ic0FfWkM3QXJKeUZzNi13OE9DdxILbUF5andHMC1Wa0E';
+let nextPageToken = '';
+const displayedMessages = new Set();
+
+// ======= Magic Quill Functions =======
+
+// Emit spark at x,y
 function createSpark(x, y) {
     const spark = document.createElement('div');
-    spark.className='spark';
-    spark.style.left = (x + (Math.random()*8-4)) + 'px';
-    spark.style.top = (y + (Math.random()*8-4)) + 'px';
+    spark.className = 'spark';
+    spark.style.left = (x + (Math.random() * 8 - 4)) + 'px';
+    spark.style.top = (y + (Math.random() * 8 - 4)) + 'px';
     page.appendChild(spark);
-    setTimeout(()=>spark.remove(), 800);
+    setTimeout(() => spark.remove(), 800);
 }
 
-// Move quill to a character and emit sparks
-function moveQuill(charSpan){
+// Move quill to character and emit sparks
+function moveQuill(charSpan) {
     const rect = charSpan.getBoundingClientRect();
     const pageRect = page.getBoundingClientRect();
-    const x = rect.left - pageRect.left + charSpan.offsetWidth/2 - 20;
-    const y = rect.top - pageRect.top - 60;
+    const quillWidth = 150;
+    const quillHeight = 150;
+
+    const x = rect.left - pageRect.left + charSpan.offsetWidth / 2 - quillWidth / 2;
+    const y = rect.top - pageRect.top - quillHeight + 20;
+
     quill.style.left = x + 'px';
     quill.style.top = y + 'px';
 
-    // Emit multiple sparks from quill tip
-    for(let i=0;i<3;i++){
-        createSpark(x+50, y+60); // tip coordinates relative to quill image
+    for (let i = 0; i < 3; i++) {
+        createSpark(x + quillWidth / 2, y + quillHeight - 10);
     }
 }
 
 // Type a name letter by letter
-function writeName(name, callback) {
-    if(currentLines.length >= maxLines){
-        page.querySelectorAll('.line').forEach(l => l.remove());
-        currentLines = [];
-    }
+function writeName(name) {
     const lineDiv = document.createElement('div');
     lineDiv.className = 'line';
     page.appendChild(lineDiv);
-    currentLines.push(lineDiv);
 
-    let i=0;
-    function typeChar(){
-        if(i<name.length){
-            const charSpan=document.createElement('span');
-            charSpan.className='char';
-            charSpan.textContent=name[i];
+    let i = 0;
+    function typeChar() {
+        if (i < name.length) {
+            const charSpan = document.createElement('span');
+            charSpan.className = 'char';
+            charSpan.textContent = name[i];
             lineDiv.appendChild(charSpan);
             moveQuill(charSpan);
             i++;
-            setTimeout(typeChar,150);
-        } else if(callback){
-            setTimeout(callback,400);
+            setTimeout(typeChar, 150);
         }
     }
     typeChar();
 }
 
-// Sequentially write all names
-function addNextName(){
-    if(nameIndex<names.length){
-        writeName(names[nameIndex],addNextName);
-        nameIndex++;
+// ======= Fetch Live Chat Messages =======
+async function fetchLiveComments() {
+    try {
+        const url = `https://youtube.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${LIVE_CHAT_ID}&part=snippet,authorDetails&key=${API_KEY}${nextPageToken ? '&pageToken=' + nextPageToken : ''}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.items) {
+            data.items.forEach(item => {
+                const name = item.authorDetails.displayName;
+                if (!displayedMessages.has(item.id)) {
+                    displayedMessages.add(item.id);
+                    writeName(name);
+                }
+            });
+        }
+
+        nextPageToken = data.nextPageToken;
+    } catch (err) {
+        console.error('Error fetching live comments', err);
+    } finally {
+        setTimeout(fetchLiveComments, 3000);
     }
 }
 
-addNextName();
+// Start fetching live comments
+fetchLiveComments();
 </script>
 
 </body>
