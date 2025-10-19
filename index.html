@@ -33,7 +33,7 @@ body {
   margin: auto;
   padding: 2%;
   color: #ff4d4d;
-  font-size: clamp(40px, 5vw, 60px);
+  font-size: clamp(60px, 7vw, 80px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -99,15 +99,14 @@ body {
 const page = document.getElementById('page');
 const quill = document.getElementById('quill');
 
-// ======= YouTube API Configuration =======
 const API_KEY = 'AIzaSyAluUkOlp_pomwmJiBlygWanS7ak8qvoK4';
 const LIVE_CHAT_ID = 'Cg0KC0dUQVJUSWYyS2Y0KicKGFVDa21ic0FfWkM3QXJKeUZzNi13OE9DdxILR1RBUlRJZjJLZjQ';
 let nextPageToken = '';
 const displayedMessages = new Set();
 
-// ======= Magic Quill Functions =======
+let currentPageCount = 0;
+let namesOnCurrentPage = 0;
 
-// Emit spark at x,y
 function createSpark(x, y) {
     const spark = document.createElement('div');
     spark.className = 'spark';
@@ -117,7 +116,6 @@ function createSpark(x, y) {
     setTimeout(() => spark.remove(), 800);
 }
 
-// Move quill to character and emit sparks
 function moveQuill(charSpan) {
     const rect = charSpan.getBoundingClientRect();
     const pageRect = page.getBoundingClientRect();
@@ -135,11 +133,19 @@ function moveQuill(charSpan) {
     }
 }
 
-// Type a name letter by letter
 function writeName(name) {
+    // Clear page after 8 names
+    if (namesOnCurrentPage >= 8) {
+        page.innerHTML = '';
+        namesOnCurrentPage = 0;
+        currentPageCount++;
+    }
+
     const lineDiv = document.createElement('div');
     lineDiv.className = 'line';
     page.appendChild(lineDiv);
+
+    namesOnCurrentPage++;
 
     let i = 0;
     function typeChar() {
@@ -156,7 +162,6 @@ function writeName(name) {
     typeChar();
 }
 
-// ======= Fetch Live Chat Messages =======
 async function fetchLiveComments() {
     try {
         const url = `https://youtube.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${LIVE_CHAT_ID}&part=snippet,authorDetails&key=${API_KEY}${nextPageToken ? '&pageToken=' + nextPageToken : ''}`;
@@ -181,7 +186,6 @@ async function fetchLiveComments() {
     }
 }
 
-// Start fetching live comments
 fetchLiveComments();
 </script>
 
