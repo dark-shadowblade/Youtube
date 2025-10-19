@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Magical Grimoire with Quill Trail</title>
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #1c1208;
+  font-family: 'Patrick Hand', cursive;
+  overflow: hidden;
+}
+
+#book {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: url('book.png') no-repeat center center;
+  background-size: cover;
+  overflow: hidden;
+}
+
+#page {
+  position: relative;
+  width: 90%;
+  height: 90%;
+  margin: auto;
+  padding: 2%;
+  color: #ff4d4d;
+  font-size: clamp(50px, 6vw, 50px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.line {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.char {
+  display: inline-block;
+  position: relative;
+  color: pink;
+  text-shadow: 
+     0 0 2px #ff0000,
+     0 0 4px #ff3333,
+     0 0 6px #ff6666;
+}
+
+.spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ff0000, transparent);
+  pointer-events: none;
+  animation: float 0.8s linear forwards;
+}
+
+@keyframes float {
+  0% {transform: translate(0,0) scale(1); opacity:1;}
+  50% {transform: translate(5px,-10px) scale(1.2); opacity:0.6;}
+  100% {transform: translate(-5px,-20px) scale(0.8); opacity:0;}
+}
+
+#quill {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  background: url('quill.png') no-repeat center center;
+  background-size: contain;
+  pointer-events: none;
+  z-index: 10;
+}
+</style>
+</head>
+<body>
+
+<div id="book">
+  <div id="page"></div>
+  <div id="quill"></div>
+</div>
+
+<script>
+const page = document.getElementById('page');
+const quill = document.getElementById('quill');
+const maxLines = 7;
+let currentLines = [];
+const names = ["Hosh Yshd","Ankit","Riya","hello","kallu","Vikram","Sara","hvghehd","jsjehf","Ali","Maya","Kiran"];
+let nameIndex = 0;
+
+// Create spark at specific coordinates
+function createSpark(x, y) {
+    const spark = document.createElement('div');
+    spark.className='spark';
+    spark.style.left = (x + (Math.random()*8-4)) + 'px';
+    spark.style.top = (y + (Math.random()*8-4)) + 'px';
+    page.appendChild(spark);
+    setTimeout(()=>spark.remove(), 800);
+}
+
+// Move quill to a character and emit sparks
+function moveQuill(charSpan){
+    const rect = charSpan.getBoundingClientRect();
+    const pageRect = page.getBoundingClientRect();
+    const x = rect.left - pageRect.left + charSpan.offsetWidth/2 - 20;
+    const y = rect.top - pageRect.top - 60;
+    quill.style.left = x + 'px';
+    quill.style.top = y + 'px';
+
+    // Emit multiple sparks from quill tip
+    for(let i=0;i<3;i++){
+        createSpark(x+50, y+60); // tip coordinates relative to quill image
+    }
+}
+
+// Type a name letter by letter
+function writeName(name, callback) {
+    if(currentLines.length >= maxLines){
+        page.querySelectorAll('.line').forEach(l => l.remove());
+        currentLines = [];
+    }
+    const lineDiv = document.createElement('div');
+    lineDiv.className = 'line';
+    page.appendChild(lineDiv);
+    currentLines.push(lineDiv);
+
+    let i=0;
+    function typeChar(){
+        if(i<name.length){
+            const charSpan=document.createElement('span');
+            charSpan.className='char';
+            charSpan.textContent=name[i];
+            lineDiv.appendChild(charSpan);
+            moveQuill(charSpan);
+            i++;
+            setTimeout(typeChar,150);
+        } else if(callback){
+            setTimeout(callback,400);
+        }
+    }
+    typeChar();
+}
+
+// Sequentially write all names
+function addNextName(){
+    if(nameIndex<names.length){
+        writeName(names[nameIndex],addNextName);
+        nameIndex++;
+    }
+}
+
+addNextName();
+</script>
+
+</body>
+</html>
