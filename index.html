@@ -33,10 +33,12 @@ body {
   margin: auto;
   padding: 2%;
   color: #ff4d4d;
-  font-size: clamp(50px, 6vw, 50px);
+  font-size: clamp(40px, 5vw, 60px);
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
   overflow: hidden;
 }
 
@@ -51,7 +53,7 @@ body {
   display: inline-block;
   position: relative;
   color: pink;
-  text-shadow: 
+  text-shadow:
      0 0 2px #ff0000,
      0 0 4px #ff3333,
      0 0 6px #ff6666;
@@ -98,72 +100,73 @@ const page = document.getElementById('page');
 const quill = document.getElementById('quill');
 
 // ======= YouTube API Configuration =======
-const API_KEY = 'AIzaSyAluUkOlp_pomwmJiBlygWanS7ak8qvoK4';  // your API key
-const LIVE_CHAT_ID = 'Cg0KC21BeWp3RzAtVmtBKicKGFVDa21ic0FfWkM3QXJKeUZzNi13OE9DdxILbUF5andHMC1Wa0E'; // your chat id
+const API_KEY = 'AIzaSyAluUkOlp_pomwmJiBlygWanS7ak8qvoK4';
+const LIVE_CHAT_ID = 'Cg0KC21BeWp3RzAtVmtBKicKGFVDa21ic0FfWkM3QXJKeUZzNi13OE9DdxILbUF5andHMC1Wa0E';
 let nextPageToken = '';
 const displayedMessages = new Set();
 
 // ======= Magic Quill Functions =======
-function createSpark(x, y){
+
+// Emit spark at x,y
+function createSpark(x, y) {
     const spark = document.createElement('div');
-    spark.className='spark';
-    spark.style.left = (x + (Math.random()*8-4)) + 'px';
-    spark.style.top = (y + (Math.random()*8-4)) + 'px';
+    spark.className = 'spark';
+    spark.style.left = (x + (Math.random() * 8 - 4)) + 'px';
+    spark.style.top = (y + (Math.random() * 8 - 4)) + 'px';
     page.appendChild(spark);
-    setTimeout(()=>spark.remove(), 800);
+    setTimeout(() => spark.remove(), 800);
 }
 
-function moveQuill(charSpan){
+// Move quill to character and emit sparks
+function moveQuill(charSpan) {
     const rect = charSpan.getBoundingClientRect();
     const pageRect = page.getBoundingClientRect();
     const quillWidth = 150;
     const quillHeight = 150;
 
-    const x = rect.left - pageRect.left + charSpan.offsetWidth/2 - quillWidth/2;
+    const x = rect.left - pageRect.left + charSpan.offsetWidth / 2 - quillWidth / 2;
     const y = rect.top - pageRect.top - quillHeight + 20;
 
     quill.style.left = x + 'px';
     quill.style.top = y + 'px';
 
-    for(let i=0;i<3;i++){
-        createSpark(x + quillWidth/2, y + quillHeight - 10);
+    for (let i = 0; i < 3; i++) {
+        createSpark(x + quillWidth / 2, y + quillHeight - 10);
     }
 }
 
-function writeName(name){
+// Type a name letter by letter
+function writeName(name) {
     const lineDiv = document.createElement('div');
     lineDiv.className = 'line';
     page.appendChild(lineDiv);
 
-    let i=0;
-    function typeChar(){
-        if(i<name.length){
-            const charSpan=document.createElement('span');
-            charSpan.className='char';
-            charSpan.textContent=name[i];
+    let i = 0;
+    function typeChar() {
+        if (i < name.length) {
+            const charSpan = document.createElement('span');
+            charSpan.className = 'char';
+            charSpan.textContent = name[i];
             lineDiv.appendChild(charSpan);
             moveQuill(charSpan);
             i++;
-            setTimeout(typeChar,150);
+            setTimeout(typeChar, 150);
         }
     }
     typeChar();
 }
 
-// ======= Fetch Live Chat Messages (Fixed CORS) =======
-async function fetchLiveComments(){
-    try{
-        const proxyUrl = "https://corsproxy.io/?";
-        const baseUrl = `https://youtube.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${LIVE_CHAT_ID}&part=snippet,authorDetails&key=${API_KEY}${nextPageToken ? '&pageToken=' + nextPageToken : ''}`;
-        const url = proxyUrl + encodeURIComponent(baseUrl);
-
+// ======= Fetch Live Chat Messages =======
+async function fetchLiveComments() {
+    try {
+        const url = `https://youtube.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${LIVE_CHAT_ID}&part=snippet,authorDetails&key=${API_KEY}${nextPageToken ? '&pageToken=' + nextPageToken : ''}`;
         const res = await fetch(url);
         const data = await res.json();
 
-        if(data.items){
-            data.items.forEach(item=>{
+        if (data.items) {
+            data.items.forEach(item => {
                 const name = item.authorDetails.displayName;
-                if(!displayedMessages.has(item.id)){
+                if (!displayedMessages.has(item.id)) {
                     displayedMessages.add(item.id);
                     writeName(name);
                 }
@@ -171,10 +174,10 @@ async function fetchLiveComments(){
         }
 
         nextPageToken = data.nextPageToken;
-    } catch(err){
+    } catch (err) {
         console.error('Error fetching live comments', err);
-    } finally{
-        setTimeout(fetchLiveComments, 4000);
+    } finally {
+        setTimeout(fetchLiveComments, 3000);
     }
 }
 
