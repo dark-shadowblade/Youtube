@@ -135,7 +135,7 @@ function moveQuill(charSpan) {
 
 function writeName(name) {
     // Clear page after 8 names
-    if (namesOnCurrentPage >= 8) {
+    if (namesOnCurrentPage >= 5) {
         page.innerHTML = '';
         namesOnCurrentPage = 0;
         currentPageCount++;
